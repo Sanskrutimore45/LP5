@@ -1,0 +1,160 @@
+
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <omp.h>
+using namespace std;
+
+class Graph{
+    int V;
+    vector<vector<int>>adj;
+    public :
+        Graph(int V) : V(V), adj(V){}
+        void addEdge(int u, int v){
+            adj[u].push_back(v);
+            adj[v].push_back(u);
+        }
+        
+        
+        void parallelBFS(int start){
+            vector<bool> vis(V,false);
+            queue<int> q; q.push(start);
+            vis[start] = true;
+            
+            #pragma omp parallel
+            while(!q.empty()){
+                int node;
+                #pragma omp critical
+                {
+                    node = q.front(); q.pop();
+                }
+                cout<<node<<" ";
+                
+                #pragma omp for
+                for(int n: adj[node]) if(!vis[n]){
+                    vis[n] = true;
+                    q.push(n);
+                }
+            }
+        }
+    };
+int main() {
+    
+    int V, E, u,v,start;
+    cout<<"Vertices : ";
+    cin>>V;
+    Graph g(V);
+    cout<<"Edges : ";
+    cin>>E;
+    cout<<"Enter edges : \n";
+    while(E--){
+        cin>>u>>v;
+        g.addEdge(u,v);
+    }
+    cout<<"Start node : ";
+    cin>>start;
+    cout<<"BFS : "; g.parallelBFS(start);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <omp.h>
+using namespace std;
+
+class Graph {
+    int V; // Number of vertices
+    vector<vector<int>> adj; // Adjacency list
+
+public:
+    Graph(int V) : V(V), adj(V) {} // Constructor initializes graph with V vertices
+
+    // Function to add an edge to the graph (undirected)
+    void addEdge(int u, int v) {
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+    }
+
+    // Parallel BFS function
+    void parallelBFS(int start) {
+        vector<bool> vis(V, false); // Visited array
+        queue<int> q;               // Queue for BFS
+        q.push(start);               // Push start node
+        vis[start] = true;           // Mark the start node as visited
+
+        cout << "BFS Traversal: ";
+        
+        while (!q.empty()) {
+            // Level-wise processing
+            int size = q.size();
+            
+            #pragma omp parallel for
+            for (int i = 0; i < size; ++i) {
+                int node;
+                #pragma omp critical
+                {
+                    node = q.front();  // Get the front node of the queue
+                    q.pop();            // Remove it from the queue
+                }
+
+                cout << node << " ";   // Print the node
+                // Traverse adjacent nodes and push unvisited nodes to the queue
+                for (int n : adj[node]) {
+                    if (!vis[n]) {
+                        vis[n] = true;
+                        #pragma omp critical
+                        q.push(n);  // Push to the queue in critical section
+                    }
+                }
+            }
+        }
+        cout << endl;
+    }
+};
+
+int main() {
+    int V, E, u, v, start;
+    
+    // Take graph input from the user
+    cout << "Vertices: ";
+    cin >> V;
+    Graph g(V); // Create a graph with V vertices
+    
+    cout << "Edges: ";
+    cin >> E;
+    cout << "Enter edges (u v): \n";
+    while (E--) {
+        cin >> u >> v;
+        g.addEdge(u, v); // Add edge to the graph
+    }
+
+    cout << "Start node: ";
+    cin >> start;
+    
+    g.parallelBFS(start); // Perform parallel BFS starting from `start`
+    
+    return 0;
+}
